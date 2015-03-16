@@ -36,9 +36,9 @@ multi MAIN ('list', Bool :$installed, Bool :$verbose) {
 }
 
 #| Test modules only. Do not install
-multi MAIN ('test-only', *@modules, Bool :$nodeps) {
+multi MAIN ('test-only', *@modules) {
     for @modules -> $x {
-        $panda.resolve($x, :$nodeps, :action<test-only>);
+        $panda.resolve($x, :nodeps, :action<test-only>);
         CATCH { when X::Panda { %failed{$x}.push($_) && say $_ } };
     }
 }
