@@ -40,6 +40,10 @@ class Panda {
         self.announce: "Installing {$p.name}"
     }
 
+    multi method announce('build-success', Panda::Project $p) {
+        self.announce: "Successfully tested {$p.name}"
+    }
+
     multi method announce('success', Panda::Project $p) {
         self.announce: "Successfully installed {$p.name}"
     }
@@ -103,8 +107,10 @@ class Panda {
         }
     }
 
-    method install(Panda::Project $bone, $nodeps,
-                   $notests, $isdep as Bool) {
+    method process(Panda::Project $bone, :$nodeps,
+                   :$notests, :$isdep as Bool,
+                   :$noinstall,
+        ) {
         my $cwd = $*CWD;
         my $dir = tmpdir();
         my $reports-file = ($.ecosystem.statefile.IO.dirname ~ '/reports.' ~ $*PERL.compiler.version).IO;
@@ -125,12 +131,17 @@ class Panda {
                 die X::Panda.new($bone.name, 'test', $_, :$bone)
             }
         }
-        self.announce('installing', $bone);
-        $.installer.install($dir);
-        my $s = $isdep ?? Panda::Project::State::installed-dep
-                       !! Panda::Project::State::installed;
-        $.ecosystem.project-set-state($bone, $s);
-        self.announce('success', $bone);
+        if $noinstall {
+            self.announce('build-success', $bone);
+        }
+        else {
+            self.announce('installing', $bone);
+            $.installer.install($dir);
+            my $s = $isdep ?? Panda::Project::State::installed-dep
+                !! Panda::Project::State::installed;
+            $.ecosystem.project-set-state($bone, $s);
+            self.announce('success', $bone);
+        }
         Panda::Reporter.new( :$bone, :$reports-file ).submit;
 
         chdir $cwd;
@@ -188,13 +199,14 @@ class Panda {
                 $.ecosystem.project-get-state($_)
                     == Panda::Project::absent
             };
-            self.install($_, $nodeps, $notests, 1) for @deps;
+            self.process($_, :$nodeps, :$notests, :isdep) for @deps;
         }
 
         given $action {
-            when 'install' { self.install($bone, $nodeps, $notests, 0); }
+            when 'install'   { self.process($bone, :$nodeps, :$notests, :!isdep); }
             when 'install-deps-only' { }
-            when 'look'    { self.look($bone) };
+            when 'look'      { self.look($bone) };
+            when 'test-only' { self.process($bone, :$nodeps, :!isdep, :noinstall); }
         }
     }
 }

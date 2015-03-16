@@ -35,6 +35,14 @@ multi MAIN ('list', Bool :$installed, Bool :$verbose) {
     listprojects($panda, :$installed, :$verbose);
 }
 
+#| Test modules only. Do not install
+multi MAIN ('test-only', *@modules, Bool :$nodeps) {
+    for @modules -> $x {
+        $panda.resolve($x, :$nodeps, :action<test-only>);
+        CATCH { when X::Panda { %failed{$x}.push($_) && say $_ } };
+    }
+}
+
 #| Update the module database
 multi MAIN ('update') {
     $panda.ecosystem.update;
