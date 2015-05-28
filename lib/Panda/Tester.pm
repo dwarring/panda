@@ -17,7 +17,7 @@ method test($where, :$bone, :$prove-command = 'prove') {
 
         if $run-default && 't'.IO ~~ :d {
             withp6lib {
-                my $cmd    = "$prove-command -e \"$*EXECUTABLE -Ilib\" -r t/";
+                my $cmd    = "$prove-command -e \"$*EXECUTABLE -Iblib/lib -Ilib\" -r t/";
 
                 my $handle = pipe("$cmd 2>&1", :r);
                 my $output = '';
