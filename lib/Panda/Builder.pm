@@ -40,7 +40,12 @@ sub strip-pod(@in is rw, Str :$in-block? = '') {
             next;
         }
 
-        @out.push: ($in-para || $in-block) ?? '' !! $line;
+        if $in-para || $in-block {
+            @out.push: '';
+        }
+        else {
+            @out.push: $line;
+        }
     }
     @out;
 }
